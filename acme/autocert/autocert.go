@@ -101,6 +101,10 @@ type Manager struct {
 	// parts combined in a single Cache.Put call, private key first.
 	Cache Cache
 
+	// DefaultHostName is a default name for when no SNI server name is specified
+	// Autocert will do as if the SNI server name was DefaultHostName
+	DefaultHostName string
+
 	// HostPolicy controls which domains the Manager will attempt
 	// to retrieve new certificates for. It does not affect cached certs.
 	//
@@ -174,7 +178,10 @@ func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 
 	name := hello.ServerName
 	if name == "" {
-		return nil, errors.New("acme/autocert: missing server name")
+		if m.DefaultHostName == "" {
+			return nil, errors.New("acme/autocert: missing server name")
+		}
+		name = m.DefaultHostName
 	}
 	if !strings.Contains(strings.Trim(name, "."), ".") {
 		return nil, errors.New("acme/autocert: server name component count invalid")
